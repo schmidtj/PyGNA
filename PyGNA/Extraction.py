@@ -228,7 +228,7 @@ class Extraction(object):
         extractionSubgraph = NetworkFrames.nx.DiGraph() if deltaGraph.is_directed() else NetworkFrames.nx.Graph()
         deltaCopy = deltaGraph.copy()
         
-        for node in deltaCopy.nodes():
+        for node in deltaCopy.nodes_iter():
             state = deltaCopy.node[node].pop(NetworkFrames.compressState.tag)
             # We are only interested in nodes that were deleted or none
             if state == NetworkFrames.compressState.deleted or \
@@ -253,8 +253,18 @@ class Extraction(object):
                change == NetworkFrames.compressState.none:
                 if start not in deltaCopy.node or end not in deltaCopy.node:
                     print "Node not found prior to adding edge to extraction subgraph"
+                data = deltaCopy.edge[start][end]
+                extractionSubgraph.add_edge(start,end, data)
+            elif change == NetworkFrames.compressState.stateChange:
+                stateName = deltaCopy.edge[start][end].pop(NetworkFrames.compressState.stateChangedName)
+                previousStateValue = deltaCopy.edge[start][end].pop(NetworkFrames.compressState.stateChangedFrom)    
+                nextStateValue = deltaCopy.edge[start][end].pop(NetworkFrames.compressState.stateChangedTo)
                 extractionSubgraph.add_edge(start,end)
-                
+                extractionSubgraph.edge[start][end]  = deltaCopy.edge[start][end]
+                extractionSubgraph.edge[start][end][stateName] = previousStateValue
+                if not extractionSubgraph.is_directed():
+                    extractionSubgraph.edge[end][start]  = deltaCopy.edge[start][end]
+                    extractionSubgraph.edge[end][start][stateName] = previousStateValue                    
         return extractionSubgraph
     
     def binaryStateOpposite(self, x):

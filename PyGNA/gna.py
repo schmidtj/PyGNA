@@ -28,15 +28,17 @@ import Models
 import csv
 import CollectData
 import Utility
+import MotifExtraction
 
 class gna:
-    def __init__(self):
+    def __init__(self, motif=False):
         self.networkFrames = NetworkFrames.NetworkFrames()
         self.extraction = Extraction.Extraction()
+        self.motifExtraction = MotifExtraction.MotifExtraction()
         self.rewriting = Rewriting.Rewriting()
         self.models = Models.Models()
         self.utility = Utility.utility()
-        self.simulation = Simulation.Simulation(self.extraction, self.rewriting, self.utility, self.networkFrames)
+        self.simulation = Simulation.Simulation(self.motifExtraction, self.rewriting, self.utility, self.networkFrames)
         self.simulationIterations = 1
         
     
@@ -99,11 +101,14 @@ class gna:
         """
         print "Reading file...",
         self.networkFrames.readGraphML(path)
+        #self.networkFrames.setInputNetwork([self.networkFrames.inputFrames[index] for index in range(9)])
+        self.networkFrames.setInputNetwork(self.networkFrames.inputFrames)
         print "Done"
         print "Analyzing dynamics...",
         self.networkFrames.compressNetworkFrames()
         print "Done."
         self.extraction.setNetworkFrames(self.networkFrames)
+        self.motifExtraction.setNetworkFrames(self.networkFrames)
 
     def findExtractionMechanism(self):
         """ Identify the Extraction mechanism in the input data.
@@ -170,7 +175,7 @@ class gna:
         print "Done."
         
         
-    def runGNA(self, iterations):
+    def runGNA(self, iterations, motifSize, motif=False, sampleSize=None):
         """Main GNA function that runs the Automaton
         Parameters
         ----------
@@ -181,26 +186,43 @@ class gna:
         None
         """
         self.simulation.setIterations(iterations)
-        self.simulation.runSimulation()
-                
-            
+        
+        #self.simulation.runMotifSimulation(motifSize) if motif else self.simulation.runSimulation()
+        self.simulation.runIterativeMotifSimulation(motifSize, sampleSize) if motif else self.simulation.runSimulation()   
+
+import cProfile, pstats, StringIO, time
 if __name__ == "__main__":
-    myGna = gna()
+    myGna = gna(True)
     query = raw_input("Do you want to process a new file? (Y/N) ")
     if query.strip() == "Y" or query.strip() == "y":
         path = raw_input("Enter file name: ")
+        motifSize = int(raw_input("Enter motif size: "))
         iterations = input("Enter number of simulation iterations: ")
+        sampleSize = int(raw_input("Enter sample size: "))
         if iterations <= 0:
             iterations = 1
-        myGna.openGraphMLNetwork(path)
-        myGna.addDefaultModels()
-        myGna.findExtractionMechanism()
-        myGna.initializeRewritingData()
-        myGna.runGNA(iterations)
+            
+        myGna.openGraphMLNetwork(path)   
+        start = time.time()
+        #myGna.motifExtraction.sampleNetwork(motifSize, sampleSize)
+        elapsed = time.time() - start
+        print elapsed
+        #myGna.addDefaultModels()
+        #myGna.findExtractionMechanism()
+        #myGna.initializeRewritingData()
+        myGna.runGNA(iterations, motifSize, True, sampleSize)
     else:
         path = raw_input("Enter original data file: ")
         pathTwo = raw_input("Enter generated data file: ")
         myGna.readExistingData(path, pathTwo)
         
  
-    
+        ##Profile code:
+               #pr = cProfile.Profile()
+               #pr.enable()        
+               #pr.disable()
+               #s = StringIO.StringIO()
+               #sortby = 'cumulative'
+               #ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+               #ps.print_stats()
+               #print s.getvalue()                

@@ -2,10 +2,20 @@ import math
 import networkx as nx
 import copy
 from itertools import groupby
+import itertools
 import random
+import sys
+from operator import itemgetter
+
+__author__ = """\n""".join(['Jeffrey Schmidt (jschmid1@binghamton.edu',
+                            'Hiroki Sayama (sayama@binghamton.edu)'])
+
+__all__ = ['getSubgraphFrequency','findSubgraphInstances','BhattacharyyaDistance',
+           'generateCumulativeDegDist','isIsomorphic']
 
 class utility(object):
     def __init__(self):
+        sys.setrecursionlimit(10000)
         self.state = None
 
     def getSubgraphFrequency(self, Graph, subgraph, symbreak=True):
@@ -43,7 +53,7 @@ class utility(object):
         # Iterate over all graph nodes
         while len(graphNodesSorted)>0 and len(baseGraph.nodes()) >= len(subgraph.nodes()):
             baseNode = graphNodesSorted[0]
-            for queryNode in subgraph.nodes():
+            for queryNode in subgraph.nodes_iter():
                 stateTest = True if not self.state else baseGraph.node[baseNode][self.state] == subgraph.node[queryNode][self.state]
                 degreeTest = (baseGraph.in_degree(baseNode) >= subgraph.in_degree(queryNode) and 
                               baseGraph.out_degree(baseNode) >= subgraph.out_degree(queryNode)) if baseGraph.is_directed() else (baseGraph.degree(baseNode) >= subgraph.degree(queryNode))
@@ -137,6 +147,13 @@ class utility(object):
                 if not (subgraph.has_edge(constrainedNeighbor, key) == Graph.has_edge(rangeneighbors, mapDict[key]) and 
                     subgraph.has_edge(key, constrainedNeighbor) == Graph.has_edge(mapDict[key], rangeneighbors)):
                     issue = True
+            
+            for key in mapDict.keys():
+                if (subgraph.has_edge(constrainedNeighbor, key) and Graph.has_edge(rangeneighbors, mapDict[key]) and
+                    subgraph.edge[constrainedNeighbor][key] != Graph.edge[rangeneighbors][mapDict[key]]) or \
+                   (subgraph.has_edge(key, constrainedNeighbor) and Graph.has_edge(mapDict[key], rangeneighbors) and
+                    subgraph.edge[key][constrainedNeighbor] != Graph.edge[mapDict[key]][rangeneighbors]):
+                    issue = True
                     
             if symbreak:
                 # Apply symmetry breaking conditions
@@ -159,7 +176,47 @@ class utility(object):
         
         # return a list of the isomorphs (also remove empty lists)
         return [x for x in isomorphs if x]    
+    
+    def lexicographicallySmallestLabeling(self, graph):
+        automorphs = self.findSubgraphInstances(graph, graph, False)
         
+        #Remove trivial automorph, i.e., graph = graph
+        if len(automorphs) > 1:
+            for aut in automorphs:
+                trivial = True
+                for key in aut.iterkeys():
+                    if key != aut[key]:
+                        trivial = False
+                        break
+                if trivial:
+                    automorphs.remove(aut)
+                    break
+            
+        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).tostring()) for aut in automorphs]
+        adjacency_strings = sorted(adjacency_strings, key=itemgetter(1))
+        
+        return adjacency_strings[0][0]
+    
+    def lexicographicallyLargestLabeling(self, graph):
+        automorphs = self.findSubgraphInstances(graph, graph, False)
+                
+        #Remove trivial automorph, i.e., graph = graph
+        if len(automorphs) > 1:
+            for aut in automorphs:
+                trivial = True
+                for key in aut.iterkeys():
+                    if key != aut[key]:
+                        trivial = False
+                        break
+                if trivial:
+                    automorphs.remove(aut)
+                    break
+            
+        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).tostring()) for aut in automorphs]
+        adjacency_strings = sorted(adjacency_strings, key=itemgetter(1),reverse=True)
+        
+        return adjacency_strings[0][0]        
+    
     def BhattacharyyaDistance(self, pList, qList):
         returnVal = 0.
         try:
@@ -214,7 +271,171 @@ class utility(object):
         secondConvert = [float(x/secondSumVal) for x in secondCumDegreeDist[1]]
         
         return [firstConvert,secondConvert]
+
+
+    def isIsomorphic(self, G1, G2,returnList=False):
+            """Fuction that determines if the two graphs passed in are isomorphic
     
+            Parameters
+            ----------
+            G1 : networkx Graph()
+             - First graph
+             
+            G2 : networkx Graph()
+             - Second graph
+    
+            Returns
+            -------
+            Boolean : True if graphs are isomorphic, False otherwise
+            """
+            mappingList = []
+            # Check local properties
+            d1=list(G1.degree().values())
+            d1.sort()
+            d2=list(G2.degree().values())
+            d2.sort()
+            if not returnList:
+                if d1 != d2: return False
+            else:
+                if d1 != d2: return mappingList
+            
+            isomorphic = True
+            permutations = list(itertools.permutations(G1.nodes()))
+            while len(permutations) > 0:
+                permute = random.choice(permutations)
+                isomorphic = True
+                # Check nodes
+                for index in range(0,len(permute)):
+                    if G1.node[permute[index]] != G2.node[G2.nodes()[index]]:
+                        isomorphic = False
+                    if not isomorphic: break
+                    
+                if isomorphic:
+                    # Check edges
+                    for index in range(0,len(permute)):
+                        
+                        # If no edge exists for this index in both graphs skip this index
+                        if permute[index] not in G1.edge and G2.nodes()[index] not in G2.edge:
+                            continue
+                        
+                        # Check for the failure case
+                        if (permute[index] in G1.edge and G2.nodes()[index] not in G2.edge) or \
+                           (permute[index] not in G1.edge and G2.nodes()[index] in G2.edge):
+                            isomorphic = False
+                            break
+                        # The edge key exists in both dictionaries, now search all edges for this key
+                        else: 
+                            # Check one direction
+                            for node in G1.edge[permute[index]]:
+                                edgeIndex = permute.index(node)
+                                if G2.nodes()[edgeIndex] not in G2.edge[G2.nodes()[index]]:
+                                    isomorphic = False
+                                    break
+                                
+                            # Check other direction
+                            for node in G2.edge[G2.nodes()[index]]:
+                                edgeIndex = G2.nodes().index(node)
+                                if permute[edgeIndex] not in G1.edge[permute[index]]:
+                                    isomorphic = False
+                                    break
+                            # Break out of the index for loop 
+                            if not isomorphic: break
+                                                  
+                if isomorphic:
+                    mappingList = permute
+                    break
+                
+                permutations.remove(permute)
+            
+            if not returnList:
+                if not isomorphic: return False
+                else: return True
+            else:
+                return mappingList    
+            
+    def isIsomorphicFast(self, G1, G2,returnList=False):
+            """Fuction that determines if the two graphs passed in are isomorphic
+    
+            Parameters
+            ----------
+            G1 : networkx Graph()
+             - First graph
+             
+            G2 : networkx Graph()
+             - Second graph
+    
+            Returns
+            -------
+            Boolean : True if graphs are isomorphic, False otherwise
+            """
+            mappingList = []
+            # Check local properties
+            d1=list(G1.degree().values())
+            d1.sort()
+            d2=list(G2.degree().values())
+            d2.sort()
+            if not returnList:
+                if d1 != d2: return False
+            else:
+                if d1 != d2: return mappingList
+            
+            isomorphic = True
+            permutations = list(itertools.permutations(G1.nodes()))
+            G2Nodes = G2.nodes()
+            while len(permutations) > 0:
+                permute = random.choice(permutations)
+                isomorphic = True
+                # Check nodes
+                for index in range(0,len(permute)):
+                    if G1.node[permute[index]] != G2.node[G2Nodes[index]]:
+                        isomorphic = False
+                    if not isomorphic: break
+                    
+                if isomorphic:
+                    # Check edges
+                    for index in range(0,len(permute)):
+                        # If no edge exists for this index in both graphs skip this index
+                        if permute[index] not in G1.edge and G2Nodes[index] not in G2.edge:
+                            continue
+                        
+                        # Check for the failure case
+                        if (permute[index] in G1.edge and G2Nodes[index] not in G2.edge) or \
+                           (permute[index] not in G1.edge and G2Nodes[index] in G2.edge):
+                            isomorphic = False
+                            break
+                        # The edge key exists in both dictionaries, now search all edges for this key
+                        else: 
+                            # Check one direction
+                            for node in G1.edge[permute[index]]:
+                                edgeIndex = permute.index(node)
+                                if G2Nodes[edgeIndex] not in G2.edge[G2Nodes[index]] or \
+                                   G1.edge[permute[index]][node] != G2.edge[G2Nodes[index]][G2Nodes[edgeIndex]]:
+                                    isomorphic = False
+                                    break
+                                
+                            # Check other direction
+                            for node in G2.edge[G2Nodes[index]]:
+                                edgeIndex = G2Nodes.index(node)
+                                if permute[edgeIndex] not in G1.edge[permute[index]] or \
+                                   G1.edge[permute[index]][permute[edgeIndex]] != G2.edge[G2Nodes[index]][node]:
+                                    isomorphic = False
+                                    break
+                                                                                  
+                            # Break out of the index for loop 
+                            if not isomorphic: break
+                                                  
+                if isomorphic:
+                    mappingList = permute
+                    break
+                
+                permutations.remove(permute)
+            
+            if not returnList:
+                if not isomorphic: return False
+                else: return True
+            else:
+                return mappingList   
+            
 if __name__ == "__main__":
     import graphMLRead
     import Rewriting

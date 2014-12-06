@@ -5,8 +5,7 @@ IO class.
 __author__ = """\n""".join(['Jeffrey Schmidt (jschmid1@binghamton.edu',
                             'Hiroki Sayama (sayama@binghamton.edu)'])
 
-__all__ = []
-
+__all__ = ['readUpperhalfMatrix']
 
 #    Copyright (C) 2014 by
 #    Jeffrey Schmidt <jschmid1@binghamton.edu>

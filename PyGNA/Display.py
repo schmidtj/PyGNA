@@ -105,12 +105,12 @@ class display(object):
         self.yInputValues = []
         
     def appendInputValuesToList(self):
-        self.xInputValuesList.append(copy.deepcopy(self.xInputValues))
-        self.yInputValuesList.append(copy.deepcopy(self.yInputValues))
+        self.xInputValuesList.extend(copy.deepcopy(self.xInputValues))
+        self.yInputValuesList.extend(copy.deepcopy(self.yInputValues))
         
     def appendExperimentalValuesToList(self):
-        self.xExperimentalValuesList.append(copy.deepcopy(self.xExperimentalValues))
-        self.yExperimentalValuesList.append(copy.deepcopy(self.yExperimentalValues))
+        self.xExperimentalValuesList.extend(copy.deepcopy(self.xExperimentalValues))
+        self.yExperimentalValuesList.extend(copy.deepcopy(self.yExperimentalValues))
         
     
     def generateBhattacharyyaFromInputs(self):
@@ -133,31 +133,43 @@ class display(object):
             
         return self.BhattacharyyaDist
         
-    def loglogPlot(self, title, xAxisName, yAxisName):
+    def loglogPlot(self, title, xAxisName, yAxisName, zAxisName="None", legloc='best', multiLine=False):
         if self.compare:
             titleOne = title + " - Observed"
             titleTwo = title + " - Experimental"
-            plt.subplot(221)
+            #plt.subplot(221)
             plt.xlabel(xAxisName)
             plt.ylabel(yAxisName)
-            plt.title(titleOne)
-            plt.loglog(self.xInputValues, self.yInputValues)
-            
-            plt.subplot(224)
-            plt.xlabel(xAxisName)
-            plt.ylabel(yAxisName)
-            plt.title(titleTwo)
-            plt.loglog(self.xExperimentalValues, self.yExperimentalValues)
-            
-            plt.show()
+            plt.title(title)
+            #n, bins, patches = plt.hist(self.yObservedValues, max(self.xObservedValues),  facecolor='b')
+            plt.loglog(self.xInputValues, self.yInputValues, 'b', label='Input', lw = 2)
+            if not multiLine:
+                plt.loglog(self.xExperimentalValues, self.yExperimentalValues, 'g', label='Simulated')
+            else:
+                count = 0
+                first = True
+                while count < len(self.xExperimentalValuesList):
+                    if first:
+                        plt.loglog(self.xExperimentalValuesList[count], self.yExperimentalValuesList[count], 'g', label='Simulated')
+                    else:
+                        plt.loglog(self.xExperimentalValuesList[count], self.yExperimentalValuesList[count], 'g')
+                    first = False
+                    count += 1
+            plt.legend(loc=legloc)
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')
+            plt.close()
+            #plt.show()
             
         else:
             plt.xlabel(xAxisName)
             plt.ylabel(yAxisName)
             plt.title(title)
             plt.loglog(self.xInputValues, self.yInputValues)
-            
-            plt.show()
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')    
+            plt.close()
+            #plt.show()
     
     def setupHistogramData(self):
         self.histMapping = {}
@@ -224,13 +236,17 @@ class display(object):
                      label = ['Input','Simulated'])
             
             plt.legend(loc='center right')
-            plt.show()
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')
+            #plt.show()
         else:
             plt.xlabel(xAxisName)
             plt.ylabel(yAxisName)
             plt.title(title)
-            n, bins, patches = plt.hist(self.yInputValues, len(set(self.yInputValues)), facecolor='b')        
-            plt.show()        
+            n, bins, patches = plt.hist(self.yInputValues, len(set(self.yInputValues)), facecolor='b')  
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')
+            #plt.show()        
     
     def UESBarPlot(self, title, xlabel, ylabel, means, std, BDMean):
         self.histInputData = self.yInputValues
@@ -266,38 +282,33 @@ class display(object):
                 low[i] = n_means[i]
             i += 1
         
-        plt.errorbar(ind+width*1.5, means, fmt=None, ecolor='red',yerr=[low,n_std])        
-        plt.show()
+        plt.errorbar(ind+width*1.5, means, fmt=None, ecolor='red',yerr=[low,n_std]) 
+        path = title + ".pdf"
+        plt.savefig(path, format='pdf')
+        #plt.show()
     
-    def barCompare(self, title, xlabel, ylabel):
-        self.improvedHistDataSetup()
-        self.generateBhattacharyyaFromInputs()
-        self.xInputValues = [x for x in range(len(self.histInputData))]
-        self.yInputValues = self.histInputData
-        self.xExperimentalValues = [x for x in range(len(self.histSimulatedData))]
-        self.yExperimentalValues = self.histSimulatedData
-        self.lineGraph(title, xlabel, ylabel)
-        '''ind = numpy.arange(len(self.histInputData))
+    def barCompare(self, title, xlabel, ylabel, xdata, ydata):
+        ind = numpy.arange(len(xdata))
         width = 0.45
         
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        rects1 = ax.bar(ind, self.histInputData, width, color='b')
+        fig , ax = plt.subplots()
+        rects1 = ax.bar(ind, xdata, width, color='b')
         
-        rects2 = ax.bar(ind+width, self.histSimulatedData, width, color='g')#, yerr=std, error_kw=dict(ecolor='red'))
+        rects2 = ax.bar(ind+width, ydata, width, color='g')#, yerr=std, error_kw=dict(ecolor='red'))
         
         ax.set_ylabel(ylabel)
         ax.set_xlabel(xlabel)
         ax.set_title(title)
         ax.set_xticks(ind+width)
-        ax.set_xticklabels(self.xInputValues)
+        ax.set_xticklabels(ind)
         
         ax.legend((rects1[0], rects2[0]), ('Input', 'Simulated'),loc='upper right')
         #plt.text(max(ind)*1.0, .90*max(max(means),max(self.yInputValues)),"DB  = " + str(self.BhattacharyyaDist), va='center', ha='center')
-        plt.text(0.7, 0.8,"DB  = " + str(self.BhattacharyyaDist), va='center', ha='center', transform=ax.transAxes)
-        plt.xlim(0, ind[-1]+width*2)
- 
-        plt.show()'''   
+        #plt.text(0.7, 0.8,"DB  = " + str(self.BhattacharyyaDist), va='center', ha='center', transform=ax.transAxes)
+        #plt.xlim(0, ind[-1]+width*2)
+        path = title + ".pdf"
+        plt.savefig(path, format='pdf')
+        #plt.show()
                 
     def lineGraph(self, title, xAxisName, yAxisName, zAxisName="None", legloc='best', multiLine=False):
         if self.compare:
@@ -312,15 +323,8 @@ class display(object):
             if not multiLine:
                 plt.plot(self.xExperimentalValues, self.yExperimentalValues, 'g', label='Simulated')
             else:
-                count = 0
-                first = True
-                while count < len(self.xExperimentalValuesList):
-                    if first:
-                        plt.plot(self.xExperimentalValuesList[count], self.yExperimentalValuesList[count], 'g', label='Simulated')
-                    else:
-                        plt.plot(self.xExperimentalValuesList[count], self.yExperimentalValuesList[count], 'g')
-                    first = False
-                    count += 1
+                x_vals = [x for x in range(len(self.xExperimentalValuesList))]
+                plt.plot(x_vals, self.yExperimentalValuesList, 'g', label='Simulated')
             
             '''
             plt.subplot(224)
@@ -330,7 +334,10 @@ class display(object):
             #n, bins, patches = plt.hist(self.yExperimentalValues, max(self.xExperimentalValues), facecolor='b')
             plt.plot(self.xExperimentalValues, self.yExperimentalValues, 'b')'''
             plt.legend(loc=legloc)
-            plt.show()
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')
+            plt.close()
+            #plt.show()
         else:
             plt.xlabel(xAxisName)
             plt.ylabel(yAxisName)
@@ -338,16 +345,27 @@ class display(object):
             if not multiLine:
                 plt.plot(self.xInputValues, self.yInputValues, 'b')
             else:
-                count = 0
-                while count < len(self.xInputValuesList):
-                    plt.plot(self.xInputValuesList[count], self.yInputValuesList[count], 'b')
-                    count += 1
-            plt.show()
+                x_vals = [x for x in range(len(self.xInputValuesList))]
+                plt.plot(x_vals, self.yInputValuesList, 'b')
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')
+            plt.close()
+            #plt.show()
        
     def scatter(self, x, y):
         plt.scatter(x, y)
         plt.show()
-        
+     
+    def pieChart(self, title, data, labels):
+        plt.figure(1, figsize=(8,8))
+        ax = plt.axes([0.1, 0.1, 0.8, 0.8])
+        plt.pie(data, labels=labels, shadow=True)
+        plt.title(title)
+        path = title + ".pdf"
+        plt.savefig(path, format='pdf')
+        plt.close()
+        #plt.show()
+         
     def show(self, title, xAxisName, yAxisName):
         if self.compare:
             titleOne = title + " - Observed"
@@ -364,11 +382,15 @@ class display(object):
             plt.title(titleTwo)
             plt.plot(self.xExperimentalValues, self.yExperimentalValues,'o')
             
-            plt.show()
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')            
+            #plt.show()
                     
         else:                
             plt.xlabel(xAxisName)
             plt.ylabel(yAxisName)
             plt.title(title)
             plt.plot(self.xInputValues,self.yInputValues, 'o')
-            plt.show()
+            path = title + ".pdf"
+            plt.savefig(path, format='pdf')            
+            #plt.show()

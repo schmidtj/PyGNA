@@ -7,7 +7,7 @@ __author__ = """\n""".join(['Jeffrey Schmidt (jschmid1@binghamton.edu',
                             'Hiroki Sayama (sayama@binghamton.edu)'])
 
 __all__ = ['setNetworkFrames','initializeRewritingData','performRewriting',
-           'makeNodeLabelsDisjoint','isIsomorphic']
+           'makeNodeLabelsDisjoint']
 
 #    Copyright (C) 2012 by
 #    Jeffrey Schmidt <jschmid1@binghamton.edu>
@@ -18,6 +18,7 @@ __all__ = ['setNetworkFrames','initializeRewritingData','performRewriting',
 
 import NetworkFrames
 import Extraction
+import MotifExtraction
 import itertools
 import random
 import copy
@@ -81,7 +82,7 @@ class Rewriting(object):
             isoFound = False
             compareGraph = self.network._getExtractionSubgraphAt(index)
             for graph in self.uniqueExtractionSubgraphs.iterkeys():
-                if self.isIsomorphic(graph,compareGraph):
+                if self.utility.isIsomorphic(graph,compareGraph):
                     isoFound = True
                     self.uniqueExtractionSubgraphs[graph].append(index+1)
                     self.dataDisplay.addInputValue(int(graph.name))
@@ -93,7 +94,7 @@ class Rewriting(object):
         
         print "Done.\n"
     
-    def performRewriting(self, extractionSubgraph):
+    def performRewriting(self, extractionSubgraph, rewritingSubgraph=None):
         ''' Performs rewriting on the extraction subgraph that is passed into the function.  The rewriting analysis needs to occur first in order to 
         determine what the appropriate rewriting rule needs to be applied.
 
@@ -115,7 +116,7 @@ class Rewriting(object):
             self.firstRun = False
             
         for uniqueGraph in self.uniqueExtractionSubgraphs.iterkeys():
-            if self.isIsomorphic(extractionSubgraph,uniqueGraph):
+            if self.utility.isIsomorphic(extractionSubgraph,uniqueGraph):
                 rewritingIndex = random.choice(self.uniqueExtractionSubgraphs[uniqueGraph])
                 delta = self.network._getCompressedNetworkAt(rewritingIndex)
                 delta = self.makeNodeLabelsDisjoint(extractionSubgraph, delta)
@@ -133,7 +134,31 @@ class Rewriting(object):
         
 
         return rewritingEvent
+    
+    '''
+    def performMotifRewriting(self, extractionSubgraph, rewritingSubgraph):
+        rewritingEvent = None
+        if self.firstRun and __debug__:
+            graphList = []
+            for uniqueGraph in self.uniqueExtractionSubgraphs.iterkeys():
+                graphList.append(uniqueGraph)
+            self.network.writeSpecificGraphs("UniqueExtractedSubgraphs.graphML", graphList)   
+            self.firstRun = False
+        
+        
+        delta = self.makeNodeLabelsDisjoint(extractionSubgraph, rewritingSubgraph)
+        associatedExtraction = Extraction.Extraction().getExtractionSubgraphFromDelta(delta)
+        #mapping = self.isIsomorphic(associatedExtraction, extractionSubgraph,True)
+        mapping = self.utility.findSubgraphInstances(extractionSubgraph, associatedExtraction)
+        #if len(mapping) < 1:
+           #print "Error in mapping rewriting during simulation!"
+        rewritingEvent = NetworkFrames.nx.relabel_nodes(delta,mapping[0],copy=True) if len(mapping) > 0 else delta
+        #rewritingEvent = self._generateRewritingEventFromExtraction(extractionSubgraph, delta, mapping)
+        
+        assert(self.network.getNumEdgesAdded(rewritingEvent) == self.network.getNumEdgesAdded(delta))
             
+        return rewritingEvent  '''       
+             
     def makeNodeLabelsDisjoint(self, keepLabels, makeUnique):
         ''' Makes sure that second graph passed in has no overlapping node id's with the
         first graph passed in.
@@ -175,82 +200,4 @@ class Rewriting(object):
         return newDelta
     
     
-    def isIsomorphic(self, G1, G2,returnList=False):
-        """Fuction that determines if the two graphs passed in are isomorphic
-
-        Parameters
-        ----------
-        G1 : networkx Graph()
-         - First graph
-         
-        G2 : networkx Graph()
-         - Second graph
-
-        Returns
-        -------
-        Boolean : True if graphs are isomorphic, False otherwise
-        """
-        mappingList = []
-        # Check local properties
-        d1=list(G1.degree().values())
-        d1.sort()
-        d2=list(G2.degree().values())
-        d2.sort()
-        if not returnList:
-            if d1 != d2: return False
-        else:
-            if d1 != d2: return mappingList
-        
-        isomorphic = True
-        permutations = list(itertools.permutations(G1.nodes()))
-        while len(permutations) > 0:
-            permute = random.choice(permutations)
-            isomorphic = True
-            # Check nodes
-            for index in range(0,len(permute)):
-                if G1.node[permute[index]] != G2.node[G2.nodes()[index]]:
-                    isomorphic = False
-                if not isomorphic: break
-                
-            if isomorphic:
-                # Check edges
-                for index in range(0,len(permute)):
-                    
-                    # If no edge exists for this index in both graphs skip this index
-                    if permute[index] not in G1.edge and G2.nodes()[index] not in G2.edge:
-                        continue
-                    
-                    # Check for the failure case
-                    if (permute[index] in G1.edge and G2.nodes()[index] not in G2.edge) or \
-                       (permute[index] not in G1.edge and G2.nodes()[index] in G2.edge):
-                        isomorphic = False
-                        break
-                    # The edge key exists in both dictionaries, now search all edges for this key
-                    else: 
-                        # Check one direction
-                        for node in G1.edge[permute[index]]:
-                            edgeIndex = permute.index(node)
-                            if G2.nodes()[edgeIndex] not in G2.edge[G2.nodes()[index]]:
-                                isomorphic = False
-                                break
-                            
-                        # Check other direction
-                        for node in G2.edge[G2.nodes()[index]]:
-                            edgeIndex = G2.nodes().index(node)
-                            if permute[edgeIndex] not in G1.edge[permute[index]]:
-                                isomorphic = False
-                                break
-                        # Break out of the index for loop 
-                        if not isomorphic: break
-                                              
-            if isomorphic:
-                mappingList = permute
-                break
-            
-            permutations.remove(permute)
-        
-        if not returnList:
-            if not isomorphic: return False
-            else: return True
-        else:
-            return mappingList
+    

@@ -117,6 +117,15 @@ def compareNetworkFrames(firstFrames, secondFrames):
                     if start not in decompressedFrame.edge or end not in decompressedFrame.edge[start]:
                         sys.stderr.write("Edge values inconsistent. Edge (" + str(start) + "," + str(end) + " does not exist in decompressed frame at index: " + str(frameIndex)+ "\n")
                         returnValue = False
+                    if  returnValue:
+                        for states in originalFrame.edge[start][end]:
+                            if states not in decompressedFrame.edge[start][end]:
+                                sys.stderr.write("Edge state does not exist.  Edge (" + str(start) + "," + str(end) +  ") with state: " + str(states) + ", does not exist in decompressed network at index: " + str(frameIndex) + "\n")
+                                returnValue = False
+                            elif originalFrame.edge[start][end][states] != decompressedFrame.edge[start][end][states]:
+                                sys.stderr.write("Edge state inconsistant.  Edge (" + str(start) + "," + str(end) +  ") with value: " + str(originalFrame.edge[start][end][states] ) + \
+                                                 ", has a different value from decompressed network; which has a value of:  " + + str(decompressedFrame.edge[start][end][states] ) + ".  At index: " + str(frameIndex) + "\n")
+                                returnValue = False
                     
         frameIndex += 1
     
