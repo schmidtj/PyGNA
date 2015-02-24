@@ -672,16 +672,16 @@ class NetworkFrames(object):
                         compressed_graph.add_edge(start, end, edge_data)
                         
                 # Check to see if there are unchanging edges.
-                '''for checkEdge in pastGraph.edges_iter():
+                for checkEdge in past_graph.edges_iter():
                     start = checkEdge[0]
                     end = checkEdge[1]
-                    if (start in currentGraph.edge and end in currentGraph.edge[start]) and \
-                       (start not in compressedGraph.edge or end not in compressedGraph.edge[start]) and \
-                       start in compressedGraph.node and \
-                       end in compressedGraph.node:
-                        edgedata = copy.deepcopy(pastGraph.edge[start][end])
+                    if (start in current_graph.edge and end in current_graph.edge[start]) and \
+                       (start not in compressed_graph.edge or end not in compressed_graph.edge[start]) and \
+                       start in compressed_graph.node and \
+                       end in compressed_graph.node:
+                        edgedata = copy.deepcopy(past_graph.edge[start][end])
                         edgedata[compressState.tag] = compressState.none
-                        compressedGraph.add_edge(start, end, edgedata)'''
+                        compressed_graph.add_edge(start, end, edgedata)
                         
                 # Add the compressed graph to the internal list
                 self._addCompressedFrame(compressed_graph)

@@ -435,7 +435,35 @@ class utility(object):
                 else: return True
             else:
                 return mappingList   
-            
+
+    def makeNodeLabelsDisjoint(self, keepLabels, makeUnique):
+        ''' Makes sure that second graph passed in has no overlapping node id's with the
+        first graph passed in.
+
+        Parameters
+        ----------
+        keepLabels : Networkx Graph()
+         - The graph that contains the node id's we want to avoid duplicating.
+
+        makeUnique : Networkx Graph()
+         - The graph that we want to alter node id's to make them unique from keepLabels graph().
+
+        Returns
+        -------
+         Networkx Graph() with unique node id's with respect to keepLabels networkx graph().
+        '''
+
+        index = 0
+        while index < len(makeUnique.nodes()):
+            if makeUnique.nodes()[index] in keepLabels.nodes():
+                currentNode = makeUnique.nodes()[index]
+                changeMap = {currentNode:max(makeUnique.nodes())+1}
+                makeUnique = nx.relabel_nodes(makeUnique,changeMap,copy=True)
+                index = 0
+            else:
+                index += 1
+
+        return makeUnique    
 if __name__ == "__main__":
     import graphMLRead
     import Rewriting

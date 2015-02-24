@@ -26,16 +26,17 @@ import Utility
 import copy
 import numpy
 import random
+import RecipeBuilder
 
 class Simulation(object):
     def __init__(self):
         pass
     
-    def __init__(self, extraction, rewriting, utility, networkFrames):
+    def __init__(self, extraction, rewriting, networkFrames):
         self.iterations = 1
-        self. extraction = extraction
+        self.extraction = extraction
         self.rewriting = rewriting
-        self.utility = utility
+        self.utility = Utility.utility()
         self.networkFrames = networkFrames
         self.avgShortestPathDisplay = Display.display(True)
         self.densityDisplay = Display.display(True)
@@ -72,6 +73,9 @@ class Simulation(object):
         temp_frames = NetworkFrames.NetworkFrames()
         temp_frames.setInputNetwork(self.simulationNetwork)
         self.simulationNetworkList.append(temp_frames)
+        
+    def write_final_simulated_network(self):
+        self.simulationNetworkList[-1].writeGraphs('simulated_network.graphML')
         
     def clearSimulatedNetwork(self):
         self.simulationNetwork = []
@@ -225,7 +229,7 @@ class Simulation(object):
             self.bhattacharyyaDegreeDisplay.clearInputValues()
         
         input_cumulative_deg_dist = self.utility.generateCumulativeDegDist(self.networkFrames.getInputNetworkAt(len(self.networkFrames.getInputNetworks())-1))
-        simulated_cumulative_deg_dist = self.utility.generateCumulativeDegDist(self.meanNetwork.getInputNetworkAt(len(self.networkFrames.getInputNetworks())-1))
+        simulated_cumulative_deg_dist = self.utility.generateCumulativeDegDist(self.simulationNetworkList[-1].getInputNetworkAt(len(self.networkFrames.getInputNetworks())-1))
         self.cumulativeDegreeDist.addInputXValueList(input_cumulative_deg_dist[0])
         self.cumulativeDegreeDist.addInputYValueList(input_cumulative_deg_dist[1])
         self.cumulativeDegreeDist.addExperimentalXValueList(simulated_cumulative_deg_dist[0])
@@ -547,8 +551,34 @@ class Simulation(object):
     
             print "Done."
     
-    def displayComparisonData(self, index):
-        self.processSimulationData(index, current_network = True)
+    #----------------------------------------------------------------------
+    def run_recipe_simulation(self):
+        """"""
+        if len(self.networkFrames.getInputNetworks()) > 0:    
+            print "Recreating Input Network..."
+            # Set the initial configuration
+            startFrame = self.networkFrames.getInputNetworkAt(0)
+            focusFrame = startFrame.copy()
+            self.addGraphToSimulatedNetwork(focusFrame)
+            recipe_builder = RecipeBuilder.RecipeBuilder(self.networkFrames)
+            recipe = recipe_builder.union_method()
+            for network_index in xrange(1,len(self.networkFrames._getCompressedNetworks())):
+                recipe.generate_gtrie(network_index)
+                recipe.generate_recipe_extraction_pool(focusFrame)
+                rewriting_rule = recipe.select_rewriting_rule(focusFrame, network_index)
+                self.networkFrames._decompress(focusFrame, rewriting_rule)
+                self.addGraphToSimulatedNetwork(focusFrame)
+                
+    
+            self.storeSimulatedNetwork()
+            self.displayComparisonData(len(self.networkFrames._getCompressedNetworks())-1, False)
+            self.write_final_simulated_network()
+            self.clearSimulatedNetwork()
+    
+            print "Done."
+            
+    def displayComparisonData(self, index, current_Network=True):
+        self.processSimulationData(index, current_Network)
         #self.meanNetwork.writeSpecificGraphs("generatedOutputMeanNetwork.graphML", self.meanNetwork.getDecompressedFrames())
 
         bhatt_title = "Bhattacharyya Distance - Cumulative Degree Distribution_" + str(index)

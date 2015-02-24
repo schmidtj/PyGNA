@@ -17,6 +17,7 @@ __all__ = ['addModel','getModelList','addDefaultModelsToList']
 #    BSD license.
 
 import Model
+import networkx as nx
 
 class Models(object):
     def __init__(self):
@@ -153,3 +154,29 @@ class Models(object):
         self.addModel(stateModel)
         self.addModel(degreeStateModel)
         #self.addModel(baseModel)
+        
+    #----------------------------------------------------------------------
+    def add_recipe_models(self):
+        """Adds the set of models used for the Recipe Method"""
+        
+        def avg_degree(G, subgraph):
+            
+            accum_degree = 0
+            for node in subgraph.nodes():
+                accum_degree += G.degree(node)
+                
+            return accum_degree / float(len(subgraph.nodes()))
+        
+        def avg_neighborhood_degree(G, subgraph):
+            
+            result = nx.average_neighbor_degree(G, nodes=subgraph.nodes())
+            accum = 0
+            for key in result.iterkeys():
+                accum += result[key]
+                
+            return accum / float(len(subgraph.nodes()))
+            
+        average_degree = Model.Model(avg_degree, 'avgDegree')  
+        average_neigh_degree = Model.Model(avg_neighborhood_degree, 'avgNeighDegree')
+        self.addModel(average_degree)
+        self.addModel(average_neigh_degree)

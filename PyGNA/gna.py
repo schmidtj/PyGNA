@@ -36,9 +36,9 @@ class gna:
         self.extraction = Extraction.Extraction()
         self.motifExtraction = MotifExtraction.MotifExtraction()
         self.rewriting = Rewriting.Rewriting()
-        self.models = Models.Models()
+        #self.models = Models.Models()
         self.utility = Utility.utility()
-        self.simulation = Simulation.Simulation(self.motifExtraction, self.rewriting, self.utility, self.networkFrames)
+        self.simulation = Simulation.Simulation(self.motifExtraction, self.rewriting, self.networkFrames)
         self.simulationIterations = 1
         
     
@@ -54,6 +54,11 @@ class gna:
         void
         """         
         self.models.addDefaultModelsToList()
+    
+    #----------------------------------------------------------------------
+    def add_recipe_models(self):
+        """"""
+        self.models.add_recipe_models(self)
         
     def addModel(self, model):
         """Adds a Model object to the list of model objects to try during Extraction
@@ -188,7 +193,13 @@ class gna:
         self.simulation.setIterations(iterations)
         
         #self.simulation.runMotifSimulation(motifSize) if motif else self.simulation.runSimulation()
-        self.simulation.runIterativeMotifSimulation(motifSize, sampleSize) if motif else self.simulation.runSimulation()   
+        self.simulation.runIterativeMotifSimulation(motifSize, sampleSize) if motif else self.simulation.runSimulation() 
+        
+    #----------------------------------------------------------------------
+    def run_recipe_GNA(self):
+        """"""
+        self.simulation.run_recipe_simulation()
+        
 
 import cProfile, pstats, StringIO, time
 if __name__ == "__main__":
@@ -196,11 +207,11 @@ if __name__ == "__main__":
     query = raw_input("Do you want to process a new file? (Y/N) ")
     if query.strip() == "Y" or query.strip() == "y":
         path = raw_input("Enter file name: ")
-        motifSize = int(raw_input("Enter motif size: "))
-        iterations = input("Enter number of simulation iterations: ")
-        sampleSize = int(raw_input("Enter sample size: "))
-        if iterations <= 0:
-            iterations = 1
+        #motifSize = int(raw_input("Enter motif size: "))
+        #iterations = input("Enter number of simulation iterations: ")
+        #sampleSize = int(raw_input("Enter sample size: "))
+        #if iterations <= 0:
+        #    iterations = 1
             
         myGna.openGraphMLNetwork(path)   
         start = time.time()
@@ -208,9 +219,10 @@ if __name__ == "__main__":
         elapsed = time.time() - start
         print elapsed
         #myGna.addDefaultModels()
+        #myGna.add_recipe_models()
         #myGna.findExtractionMechanism()
         #myGna.initializeRewritingData()
-        myGna.runGNA(iterations, motifSize, True, sampleSize)
+        myGna.run_recipe_GNA()
     else:
         path = raw_input("Enter original data file: ")
         pathTwo = raw_input("Enter generated data file: ")

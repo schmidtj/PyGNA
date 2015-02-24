@@ -48,7 +48,7 @@ class MotifExtraction(object):
         self.proportionalSelection = []
         self.display = Display.display()
         self.gtrie = GTrie.GTrie()
-        self.gtrie.createGTrieWithFour()
+        #self.gtrie.createGTrieWithFour()
         self.simulationgtrie = GTrie.GTrie()
         self.usedRewritingRules = {}
         self.avg_changes = 0.
@@ -237,6 +237,28 @@ class MotifExtraction(object):
     def sampleCompressedNetworkAt(self, networkIndex):
         self.gtrie.setMaxMatches(self.sample_num)
         network = self.network._getCompressedNetworkAt(networkIndex)
+        
+        ###TEST###
+        import community
+        import matplotlib.pyplot as plt
+        #first compute the best partition
+        partition = community.best_partition(network)
+        
+        #drawing
+        size = float(len(set(partition.values())))
+        pos = nx.spring_layout(network)
+        count = 0.
+        for com in set(partition.values()) :
+            count = count + 1.
+            list_nodes = [nodes for nodes in partition.keys()
+                          if partition[nodes] == com]
+            nx.draw_networkx_nodes(network, pos, list_nodes, node_size = 20,
+                                   node_color = str(count / size))
+        
+        
+        nx.draw_networkx_edges(network,pos, alpha=0.5)
+        plt.show()        
+        ##########
         num_changes = self.network.getNumberOfChanges(networkIndex)
         #value = .911 * math.exp(-0.000797 * num_changes)
         value = 0.01 if num_changes > 5000 else 0.1
