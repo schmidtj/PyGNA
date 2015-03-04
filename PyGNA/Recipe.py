@@ -136,7 +136,7 @@ class Recipe(object):
     def generate_recipe_extraction_pool(self, network):
         """"""
         print "Generating GTrie Extraction Pool...",
-        self.recipe_tree.GTrieMatch(network,labels=True, states=False)
+        self.recipe_tree.GTrieMatch(network,labels=True, states=True)
         print "Done."
         
         self.recipe_extraction_pool = self.recipe_tree.getMatches(labels=True)
@@ -183,8 +183,10 @@ class Recipe(object):
         delta = self.util.makeNodeLabelsDisjoint(choice.get_subgraph(), t_rhs)
         delta = self.util.makeNodeLabelsDisjoint(network, delta)
         new_lhs = self.extraction.getExtractionSubgraphFromDelta(delta)
-        mapping = self.util.findSubgraphInstances(choice.get_subgraph(), new_lhs)       
-        rewriting_rule = nx.relabel_nodes(delta,mapping[0],copy=True)
+        mapping = self.util.findSubgraphInstances(choice.get_subgraph(), new_lhs, False)  
+        if len(mapping) > 1:
+            pass
+        rewriting_rule = nx.relabel_nodes(delta,mapping[0],copy=True) if len(mapping) > 0 else delta
      
         if not self.is_new_iteration(iteration + 1):
             candidates.remove(choice)

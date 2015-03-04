@@ -588,7 +588,7 @@ class Simulation(object):
         avg_short_title = "Average Shortest Path Length" + str(index)
         avg_clust_title = "Average Clustering" + str(index)
         self.bhattacharyyaDegreeDisplay.lineGraph(bhatt_title, "Time Step", "Bhattacharyya Distance",multiLine=True)
-        #self.cumulativeDegreeDist.loglogPlot("Cumulative Degree Distribution", "Degree (d)", "P(x >= d)", legloc="upper right",multiLine=False)
+        self.cumulativeDegreeDist.loglogPlot("Cumulative Degree Distribution", "Degree (d)", "P(x >= d)", legloc="upper right",multiLine=False)
         self.densityDisplay.lineGraph(dense_title, "Time Step", "Graph Density", legloc="upper right",multiLine=True)
         self.nodesDisplay.lineGraph(nodes_title, "Time Step", "Num Nodes", legloc="upper right", multiLine=True)
         self.edgesDisplay.lineGraph(edges_title,"Time Step", "Num Edges", legloc="upper right", multiLine=True)

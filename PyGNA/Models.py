@@ -175,8 +175,14 @@ class Models(object):
                 accum += result[key]
                 
             return accum / float(len(subgraph.nodes()))
+        
+        def avg_clustering(G, subgraph):
+            G = G.to_undirected() if nx.is_directed(G) else G
+            return nx.average_clustering(G, subgraph.nodes())
             
         average_degree = Model.Model(avg_degree, 'avgDegree')  
         average_neigh_degree = Model.Model(avg_neighborhood_degree, 'avgNeighDegree')
+        average_clustering = Model.Model(avg_clustering, 'avgClustering')
         self.addModel(average_degree)
         self.addModel(average_neigh_degree)
+        self.addModel(average_clustering)
