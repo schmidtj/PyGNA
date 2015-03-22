@@ -5,6 +5,7 @@ from itertools import groupby
 import itertools
 import random
 import sys
+import numpy
 from operator import itemgetter
 
 __author__ = """\n""".join(['Jeffrey Schmidt (jschmid1@binghamton.edu',
@@ -242,13 +243,70 @@ class utility(object):
         freq_seq = dict((key, float(len(list(group)))) for key, group in groupby(deg_seq))
         sumVal = sum(freq_seq.values())
         
-        cum_sum = 0
         for key in freq_seq.iterkeys():
             cumulative_deg.append(sum([freq_seq[x] for x in freq_seq.iterkeys() if x >= key])/sumVal)
             
         return [freq_seq.keys(), cumulative_deg]
     
-    def processCumDegreeForBD(self, firstCumDegreeDist, secondCumDegreeDist):
+    def generate_path_length_dist(self, network):
+        cumulative_path_dist = []
+        path_dist = []
+        for x in network.nodes():
+            for y in network.nodes():
+                paths = 0
+                try:
+                    paths = len(list(nx.all_shortest_paths(network, x, y)))
+                except nx.exception.NetworkXNoPath:
+                    pass
+                path_dist.append(paths)
+        no_zeros = sorted([x for x in path_dist if x != 0])
+        freq_seq = dict((key, float(len(list(group)))) for key, group in groupby(no_zeros))
+        sumVal = sum(freq_seq.values())
+    
+        for key in freq_seq.iterkeys():
+            cumulative_path_dist.append(sum([freq_seq[x] for x in freq_seq.iterkeys() if x >= key])/sumVal)
+        
+        return [freq_seq.keys(), cumulative_path_dist]     
+    
+    def generate_core_dist(self, network):
+        cumulative_core_dist = []
+        core_dist = sorted(nx.core_number(network).values())
+        freq_seq = dict((key, float(len(list(group)))) for key, group in groupby(core_dist))
+        sumVal = sum(freq_seq.values())
+        
+        for key in freq_seq.iterkeys():
+            cumulative_core_dist.append(sum([freq_seq[x] for x in freq_seq.iterkeys() if x >= key])/sumVal)
+            
+        return [freq_seq.keys(), cumulative_core_dist]
+    
+    def get_eigenvalues(self, network):
+        net = network.to_undirected() if network.is_directed() else network
+        laplacian = nx.laplacian_matrix(net)
+        eigens = numpy.linalg.eigvals(laplacian)
+        eigens = [eigen if eigen > 1*10**-10 else 0 for eigen in eigens]
+        return sorted(eigens)
+    
+    def get_distance_for_eigenvalues(self, eigen_one, eigen_two):
+        eigen_one = eigen_one[:len(eigen_two)] if len(eigen_two) > len(eigen_one) else eigen_one
+        eigen_two = eigen_two[:len(eigen_one)] if len(eigen_one) > len(eigen_two) else eigen_two
+        if len(eigen_one) > 25:
+            eigen_one = eigen_one[:25]
+            eigen_two = eigen_two[:25]
+        
+        distance = self.minkowski_distance(eigen_one, eigen_two, 2.)
+        return distance
+    
+    def minkowski_distance(self, data_one, data_two, p):
+        if len(data_one) == len(data_two):
+            accum = 0.
+            for i in xrange(len(data_one)):
+                accum += abs(data_one[i] - data_two[i]) ** p
+        
+            return accum ** (1 / p)
+        else:
+            raise IndexError("The size of the lists are different.")
+        
+    def processDataForBD(self, firstCumDegreeDist, secondCumDegreeDist):
         firstSumVal = sum(firstCumDegreeDist[1])
         secondSumVal = sum(secondCumDegreeDist[1])
         setOne = set(firstCumDegreeDist[0])

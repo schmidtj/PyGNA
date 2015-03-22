@@ -44,6 +44,10 @@ class Simulation(object):
         self.edgesDisplay = Display.display(True)
         self.avgClusteringDisplay = Display.display(True)
         self.cumulativeDegreeDist = Display.display(True)
+        self.path_length_dist = Display.display(True)
+        self.clustering_coef_dist = Display.display(True)
+        self.k_core_dist = Display.display(True)
+        self.eigen_compare = Display.display(True)
         self.bhattacharyyaDegreeDisplay = Display.display()
         self.simulationNetwork = []
         self.simulationNetworkList = []
@@ -202,8 +206,25 @@ class Simulation(object):
                 # BD cumulative degree dist
                 input_cum_degree = self.utility.generateCumulativeDegDist(self.networkFrames.getInputNetworkAt(frame_number))
                 simulated_cum_degree = self.utility.generateCumulativeDegDist(networks.getInputNetworkAt(frame_number))
-                processed_cum_degree = self.utility.processCumDegreeForBD(input_cum_degree, simulated_cum_degree)
+                processed_cum_degree = self.utility.processDataForBD(input_cum_degree, simulated_cum_degree)
                 self.bhattacharyyaDegreeDisplay.addInputValue(self.utility.BhattacharyyaDistance(processed_cum_degree[0],processed_cum_degree[1]))
+                
+                # BD path length distribution
+                input_path_dist = self.utility.generate_path_length_dist(self.networkFrames.getInputNetworkAt(frame_number))
+                simulated_path_dist = self.utility.generate_path_length_dist(self.simulationNetwork[frame_number])
+                processed_path_dist = self.utility.processDataForBD(input_path_dist, simulated_path_dist)
+                self.path_length_dist.addInputValue(self.utility.BhattacharyyaDistance(processed_path_dist[0],processed_path_dist[1]))                   
+                
+                # BD k_core distribution
+                input_core_dist = self.utility.generate_core_dist(self.networkFrames.getInputNetworkAt(frame_number))
+                simulated_core_dist = self.utility.generate_core_dist(self.simulationNetwork[frame_number])
+                processed_core_dist = self.utility.processDataForBD(input_core_dist, simulated_core_dist)
+                self.k_core_dist.addInputValue(self.utility.BhattacharyyaDistance(processed_core_dist[0], processed_core_dist[1]))
+                
+                # Calculate and compare eigenvalues
+                input_eigen = self.utility.get_eigenvalues(self.networkFrames.getInputNetworkAt(frame_number))
+                simulated_eigen = self.utility.get_eigenvalues(self.simulationNetwork[frame_number])
+                self.eigen_compare.addInputValue(self.utility.get_distance_for_eigenvalues(input_eigen, simulated_eigen))                
                 
                 frame_number += 1
                 
@@ -227,6 +248,9 @@ class Simulation(object):
             
             self.bhattacharyyaDegreeDisplay.appendInputValuesToList()
             self.bhattacharyyaDegreeDisplay.clearInputValues()
+            
+            self.path_length_dist.appendInputValuesToList()
+            self.path_length_dist.clearInputValues()
         
         input_cumulative_deg_dist = self.utility.generateCumulativeDegDist(self.networkFrames.getInputNetworkAt(len(self.networkFrames.getInputNetworks())-1))
         simulated_cumulative_deg_dist = self.utility.generateCumulativeDegDist(self.simulationNetworkList[-1].getInputNetworkAt(len(self.networkFrames.getInputNetworks())-1))
@@ -320,9 +344,26 @@ class Simulation(object):
         # BD cumulative degree dist
         input_cum_degree = self.utility.generateCumulativeDegDist(self.networkFrames.getInputNetworkAt(frame_number))
         simulated_cum_degree = self.utility.generateCumulativeDegDist(self.simulationNetwork[frame_number])
-        processed_cum_degree = self.utility.processCumDegreeForBD(input_cum_degree, simulated_cum_degree)
+        processed_cum_degree = self.utility.processDataForBD(input_cum_degree, simulated_cum_degree)
         self.bhattacharyyaDegreeDisplay.addInputValue(self.utility.BhattacharyyaDistance(processed_cum_degree[0],processed_cum_degree[1]))
-                    
+        
+        # BD path length distribution
+        input_path_dist = self.utility.generate_path_length_dist(self.networkFrames.getInputNetworkAt(frame_number))
+        simulated_path_dist = self.utility.generate_path_length_dist(self.simulationNetwork[frame_number])
+        processed_path_dist = self.utility.processDataForBD(input_path_dist, simulated_path_dist)
+        self.path_length_dist.addInputValue(self.utility.BhattacharyyaDistance(processed_path_dist[0],processed_path_dist[1]))        
+        
+        # BD k_core distribution
+        input_core_dist = self.utility.generate_core_dist(self.networkFrames.getInputNetworkAt(frame_number))
+        simulated_core_dist = self.utility.generate_core_dist(self.simulationNetwork[frame_number])
+        processed_core_dist = self.utility.processDataForBD(input_core_dist, simulated_core_dist)
+        self.k_core_dist.addInputValue(self.utility.BhattacharyyaDistance(processed_core_dist[0], processed_core_dist[1]))
+        
+        # Calculate and compare eigenvalues
+        input_eigen = self.utility.get_eigenvalues(self.networkFrames.getInputNetworkAt(frame_number))
+        simulated_eigen = self.utility.get_eigenvalues(self.simulationNetwork[frame_number])
+        self.eigen_compare.addInputValue(self.utility.get_distance_for_eigenvalues(input_eigen, simulated_eigen))
+        
         self.avgShortestPathDisplay.appendExperimentalValuesToList()
         self.avgShortestPathDisplay.clearExperimentalValues()
         
@@ -582,12 +623,18 @@ class Simulation(object):
         #self.meanNetwork.writeSpecificGraphs("generatedOutputMeanNetwork.graphML", self.meanNetwork.getDecompressedFrames())
 
         bhatt_title = "Bhattacharyya Distance - Cumulative Degree Distribution_" + str(index)
+        path_len_title = "BD - Path Length Distribution_" + str(index)
+        core_dist_title = "BD - K Core Distribution_" + str(index)
+        eigen_title = "L2 Distance - Eigenvalue Distribution" + str(index)
         dense_title = "Graph Density_" + str(index)
         nodes_title = "Number of Nodes" + str(index)
         edges_title = "Number of Edges" + str(index)
         avg_short_title = "Average Shortest Path Length" + str(index)
         avg_clust_title = "Average Clustering" + str(index)
         self.bhattacharyyaDegreeDisplay.lineGraph(bhatt_title, "Time Step", "Bhattacharyya Distance",multiLine=True)
+        self.path_length_dist.lineGraph(path_len_title, "Time Step", "BD Path Len Dist", multiLine=True)
+        self.k_core_dist.lineGraph(core_dist_title, "Time Step", "BD K Core Dist", multiLine=True)
+        self.eigen_compare.lineGraph(eigen_title, "Time Step", "L_Dist Eigenval Distribution", multiLine=True)
         self.cumulativeDegreeDist.loglogPlot("Cumulative Degree Distribution", "Degree (d)", "P(x >= d)", legloc="upper right",multiLine=False)
         self.densityDisplay.lineGraph(dense_title, "Time Step", "Graph Density", legloc="upper right",multiLine=True)
         self.nodesDisplay.lineGraph(nodes_title, "Time Step", "Num Nodes", legloc="upper right", multiLine=True)

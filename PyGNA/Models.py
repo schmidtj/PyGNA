@@ -182,7 +182,7 @@ class Models(object):
             
         average_degree = Model.Model(avg_degree, 'avgDegree')  
         average_neigh_degree = Model.Model(avg_neighborhood_degree, 'avgNeighDegree')
-        average_clustering = Model.Model(avg_clustering, 'avgClustering')
+        #average_clustering = Model.Model(avg_clustering, 'avgClustering')
         self.addModel(average_degree)
         self.addModel(average_neigh_degree)
-        self.addModel(average_clustering)
+        #self.addModel(average_clustering)
