@@ -109,7 +109,7 @@ class RecipeBuilder(object):
             lefthandside = self.extraction.getExtractionSubgraphFromDelta(target_motif)
             
             print len(lefthandside.edges())
-            lhs_motif = self.construct_lhs(self.network.getInputNetworkAt(networkIndex), lefthandside)
+            lhs_motif = self.construct_lhs(self.network.getInputNetworkAt(networkIndex-1), lefthandside)
             rhs_motif = self.construct_rhs(target_motif)          
             
             transition_list.insert_motif_transition(lhs_motif, rhs_motif)

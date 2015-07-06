@@ -17,7 +17,7 @@ __all__ = ['get_total_iterations','add_transition_list','choose_motif_transition
 
 import Motif
 import pickle
-from GTrie import GTrie
+import GTrie
 import sys
 import random
 import NetworkFrames
@@ -33,7 +33,7 @@ class Recipe(object):
         """Default constructor"""
         self.transition_sets = []
         self.total_iterations = 0
-        self.recipe_tree = GTrie.GTrie()
+        self.recipe_tree = GTrie.GTrie.GTrie()
         self.recipe_extraction_pool = None
         self.models = Models.Models()
         self.models.add_recipe_models()        
@@ -127,7 +127,7 @@ class Recipe(object):
         """"""
         if self.is_new_iteration(iteration):
             lhs_list = self.get_lhs_for_iteration(iteration)
-            self.recipe_tree = GTrie.GTrie()
+            self.recipe_tree = GTrie.GTrie.GTrie()
             for index in xrange(len(lhs_list)):
                 lhs = lhs_list[index]
                 self.recipe_tree.GTrieInsert(lhs.get_subgraph(), index, states=True)        

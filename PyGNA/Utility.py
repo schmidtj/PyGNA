@@ -193,7 +193,7 @@ class utility(object):
                     automorphs.remove(aut)
                     break
             
-        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).tostring()) for aut in automorphs]
+        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).todense().tostring()) for aut in automorphs]
         adjacency_strings = sorted(adjacency_strings, key=itemgetter(1))
         
         return adjacency_strings[0][0]
@@ -213,7 +213,7 @@ class utility(object):
                     automorphs.remove(aut)
                     break
             
-        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).tostring()) for aut in automorphs]
+        adjacency_strings = [(aut, nx.adjacency_matrix(nx.relabel_nodes(graph, aut, copy=True)).todense().tostring()) for aut in automorphs]
         adjacency_strings = sorted(adjacency_strings, key=itemgetter(1),reverse=True)
         
         return adjacency_strings[0][0]        
@@ -281,14 +281,14 @@ class utility(object):
     
     def get_eigenvalues(self, network):
         net = network.to_undirected() if network.is_directed() else network
-        laplacian = nx.laplacian_matrix(net)
-        eigens = numpy.linalg.eigvals(laplacian)
+        laplacian = nx.normalized_laplacian_matrix(net)
+        eigens = numpy.linalg.eigvals(laplacian.A)
         eigens = [eigen if eigen > 1*10**-10 else 0 for eigen in eigens]
         return sorted(eigens)
     
-    def get_distance_for_eigenvalues(self, eigen_one, eigen_two):
-        eigen_one = eigen_one[:len(eigen_two)] if len(eigen_two) > len(eigen_one) else eigen_one
-        eigen_two = eigen_two[:len(eigen_one)] if len(eigen_one) > len(eigen_two) else eigen_two
+    def get_distance_for_eigenvalues(self, eigen_one, eigen_two): 
+        eigen_one = eigen_one[:len(eigen_two)] if len(eigen_two) < len(eigen_one) else eigen_one
+        eigen_two = eigen_two[:len(eigen_one)] if len(eigen_one) < len(eigen_two) else eigen_two
         if len(eigen_one) > 25:
             eigen_one = eigen_one[:25]
             eigen_two = eigen_two[:25]

@@ -161,24 +161,37 @@ class Models(object):
         
         def avg_degree(G, subgraph):
             
-            accum_degree = 0
-            for node in subgraph.nodes():
-                accum_degree += G.degree(node)
-                
-            return accum_degree / float(len(subgraph.nodes()))
+            if len(subgraph.nodes()) > 0:
+                accum_degree = 0
+                for node in subgraph.nodes():
+                    accum_degree += G.degree(node)
+                    
+                return accum_degree / float(len(subgraph.nodes()))
+            else:
+                return 0.
         
         def avg_neighborhood_degree(G, subgraph):
             
-            result = nx.average_neighbor_degree(G, nodes=subgraph.nodes())
-            accum = 0
-            for key in result.iterkeys():
-                accum += result[key]
+            if len(subgraph.nodes()) > 0:
                 
-            return accum / float(len(subgraph.nodes()))
+                result = nx.average_neighbor_degree(G, nodes=subgraph.nodes())
+                accum = 0
+                for key in result.iterkeys():
+                    accum += result[key]
+                    
+                return accum / float(len(subgraph.nodes()))
+            
+            else:
+                return 0.
         
         def avg_clustering(G, subgraph):
-            G = G.to_undirected() if nx.is_directed(G) else G
-            return nx.average_clustering(G, subgraph.nodes())
+            if len(subgraph.nodes()) > 0:
+                
+                G = G.to_undirected() if nx.is_directed(G) else G
+                return nx.average_clustering(G, subgraph.nodes())
+            
+            else:
+                return 0.
             
         average_degree = Model.Model(avg_degree, 'avgDegree')  
         average_neigh_degree = Model.Model(avg_neighborhood_degree, 'avgNeighDegree')
